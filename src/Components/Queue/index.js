@@ -7,15 +7,26 @@ import QueueRow from "./QueueRow";
 
 //Stores
 import authStore from "../../Stores/authStore";
+import socketStore from "../../Stores/socketStore";
 
 class Queue extends Component {
   constructor(props) {
     super(props);
     this.state = {
-      queue: []
+      queue: [],
     };
   }
+  componentDidMount() {
+    authStore.getRestaurantDetails(authStore.restaurant);
+    socketStore.restaurantSignIn(authStore.restaurant);
 
+    socketStore.socket.on("restaurantQ", (data) => {
+      this.setState({ queue: data });
+    });
+  }
+  componentWillUnmount() {
+    socketStore.socket.off("restaurantQ");
+  }
   render() {
     if (authStore.loading && authStore.restaurant === null) {
       return <Redirect to="/login/" />;
@@ -24,7 +35,9 @@ class Queue extends Component {
     let QueueList;
     if (queue) {
       queue = queue.reverse();
-      QueueList = queue.map(queue => <QueueRow key={queue.id} queue={queue} />);
+      QueueList = queue.map((queue) => (
+        <QueueRow key={queue.id} queue={queue} />
+      ));
       return (
         <div style={{ marginTop: 50 }} className="row text-center">
           <table className=" col-10 table table-bordered mx-auto">
@@ -50,7 +63,7 @@ class Queue extends Component {
 }
 
 const white = {
-  color: "white"
+  color: "white",
 };
 
 export default observer(Queue);
